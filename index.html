@@ -251,6 +251,81 @@
                 box-shadow: 0 0 80px rgba(0,0,0,0.12);
             }
         }
+
+        /* ── Share Button ── */
+        .share-btn {
+            position: fixed;
+            bottom: 28px;
+            left: 20px;
+            z-index: 1001;
+            height: 44px;
+            padding: 0 18px;
+            border-radius: 22px;
+            border: 1.5px solid var(--gold);
+            background: rgba(250,243,230,0.92);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text);
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 16px rgba(92,26,26,0.1);
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            font-family: inherit;
+        }
+        .share-btn:active { transform: scale(0.95); }
+
+        /* ── Share Image Overlay ── */
+        .share-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            padding: 20px;
+        }
+        .share-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .share-overlay img {
+            max-width: 90%;
+            max-height: 75vh;
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+        }
+        .share-hint {
+            color: #fff;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+        }
+        .share-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -268,6 +343,18 @@
 
         <div class="bottom-ornament"><span class="flower">❦</span></div>
         <p class="footer-text">期 待 您 的 到 来</p>
+    </div>
+
+    <!-- ── Share Button ── -->
+    <button id="shareBtn" class="share-btn" aria-label="生成分享图">
+        📤 分享
+    </button>
+
+    <!-- ── Share Image Overlay ── -->
+    <div id="shareOverlay" class="share-overlay">
+        <button id="shareClose" class="share-close">✕</button>
+        <img id="shareImage" src="" alt="分享图">
+        <p class="share-hint">长按图片保存到相册</p>
     </div>
 
     <!-- ── Music Button ── -->
@@ -460,7 +547,174 @@
         }
 
         // ============================================================
-        //  4. INITIALIZATION
+        //  4. SHARE IMAGE GENERATOR
+        // ============================================================
+        const shareBtn = document.getElementById('shareBtn');
+        const shareOverlay = document.getElementById('shareOverlay');
+        const shareImage = document.getElementById('shareImage');
+        const shareClose = document.getElementById('shareClose');
+        let shareDataUrl = null;
+
+        async function generateShareImage() {
+            if (shareDataUrl) {
+                shareImage.src = shareDataUrl;
+                shareOverlay.classList.add('show');
+                return;
+            }
+
+            // Show loading state
+            shareBtn.textContent = '生成中...';
+            shareBtn.disabled = true;
+
+            const W = 750;
+            const H = 1334;
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient - warm beige
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+            bgGrad.addColorStop(0, '#faf3e6');
+            bgGrad.addColorStop(0.5, '#f5e6d3');
+            bgGrad.addColorStop(1, '#faf3e6');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Load images
+            const loadImg = (src) => new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+
+            try {
+                const [photo, qr] = await Promise.all([
+                    loadImg('photo.jpg'),
+                    loadImg('qrcode.png')
+                ]);
+
+                // Draw couple photo (top area)
+                const photoW = 600;
+                const photoH = 600;
+                const photoX = (W - photoW) / 2;
+                const photoY = 100;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(photoX - 4, photoY - 4, photoW + 8, photoH + 8);
+                ctx.fillStyle = '#c9a96e';
+                ctx.fillRect(photoX - 6, photoY - 6, photoW + 12, photoH + 12);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(photoX - 4, photoY - 4, photoW + 8, photoH + 8);
+
+                // Draw photo with cover crop
+                const imgRatio = photo.width / photo.height;
+                let sw, sh, sx, sy;
+                if (imgRatio > 1) {
+                    sh = photo.height;
+                    sw = photo.height;
+                    sx = (photo.width - sw) / 2;
+                    sy = 0;
+                } else {
+                    sw = photo.width;
+                    sh = photo.width;
+                    sx = 0;
+                    sy = (photo.height - sh) / 2;
+                }
+                ctx.drawImage(photo, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+
+                // Gold decorative lines around photo
+                ctx.strokeStyle = 'rgba(201,169,110,0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(photoX - 20, photoY + photoH + 30);
+                ctx.lineTo(photoX + photoW + 20, photoY + photoH + 30);
+                ctx.stroke();
+
+                // Title text
+                ctx.fillStyle = '#8b1a2b';
+                ctx.font = 'bold 48px "STKaiti","KaiTi","SimSun",serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('婚 礼 邀 请 函', W / 2, photoY + photoH + 90);
+
+                // Subtitle
+                ctx.fillStyle = '#8b5e5e';
+                ctx.font = '26px "STKaiti","KaiTi","SimSun",serif';
+                ctx.fillText('WEDDING INVITATION', W / 2, photoY + photoH + 130);
+
+                // Decorative diamond
+                ctx.fillStyle = '#c9a96e';
+                ctx.save();
+                ctx.translate(W / 2, photoY + photoH + 155);
+                ctx.rotate(Math.PI / 4);
+                ctx.fillRect(-4, -4, 8, 8);
+                ctx.restore();
+
+                // Invitation text
+                ctx.fillStyle = '#5c1a1a';
+                ctx.font = '28px "STKaiti","KaiTi","SimSun",serif';
+                ctx.fillText('谨以白首之约', W / 2, photoY + photoH + 210);
+                ctx.fillText('邀请您见证我们的幸福时刻', W / 2, photoY + photoH + 250);
+
+                // Bottom gold line
+                ctx.strokeStyle = 'rgba(201,169,110,0.5)';
+                ctx.beginPath();
+                ctx.moveTo(W / 4, photoY + photoH + 280);
+                ctx.lineTo(W * 3 / 4, photoY + photoH + 280);
+                ctx.stroke();
+
+                // QR Code
+                const qrSize = 180;
+                const qrX = (W - qrSize) / 2;
+                const qrY = H - 260;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+                ctx.fillStyle = '#c9a96e';
+                ctx.fillRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+                ctx.drawImage(qr, qrX, qrY, qrSize, qrSize);
+
+                // QR hint text
+                ctx.fillStyle = '#8b5e5e';
+                ctx.font = '22px "STKaiti","KaiTi","SimSun",serif';
+                ctx.fillText('长按识别二维码', W / 2, qrY - 30);
+                ctx.fillText('查看电子请柬', W / 2, qrY - 5);
+
+                // Bottom decorative
+                ctx.fillStyle = '#c9a96e';
+                ctx.save();
+                ctx.translate(W / 2, H - 30);
+                ctx.rotate(Math.PI / 4);
+                ctx.fillRect(-3, -3, 6, 6);
+                ctx.restore();
+
+                shareDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                shareImage.src = shareDataUrl;
+                shareOverlay.classList.add('show');
+                shareBtn.textContent = '📤 分享';
+                shareBtn.disabled = false;
+
+            } catch (err) {
+                console.error('生成分享图失败:', err);
+                shareBtn.textContent = '📤 分享';
+                shareBtn.disabled = false;
+                alert('生成失败，请刷新后重试');
+            }
+        }
+
+        shareBtn.addEventListener('click', generateShareImage);
+
+        shareClose.addEventListener('click', () => {
+            shareOverlay.classList.remove('show');
+        });
+        shareOverlay.addEventListener('click', (e) => {
+            if (e.target === shareOverlay) shareOverlay.classList.remove('show');
+        });
+
+        // ============================================================
+        //  5. INITIALIZATION
         // ============================================================
         function init() {
             resizeCanvas();

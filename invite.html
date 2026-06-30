@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>婚礼邀请函</title>
+
+    <!-- WeChat / Social Media Meta Tags -->
+    <meta property="og:title" content="婚礼邀请函">
+    <meta property="og:description" content="谨以白首之约，邀请您见证我们的幸福时刻">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://songchenfeng.github.io/wedding-invitation/">
+    <meta property="og:image" content="https://songchenfeng.github.io/wedding-invitation/photo_thumb.jpg">
+    <meta property="og:image:width" content="600">
+    <meta property="og:image:height" content="600">
+    <meta property="og:image:secure_url" content="https://songchenfeng.github.io/wedding-invitation/photo_thumb.jpg">
+    <meta itemprop="name" content="婚礼邀请函">
+    <meta itemprop="image" content="https://songchenfeng.github.io/wedding-invitation/photo_thumb.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <style>
+        :root {
+            --bg: #faf3e6;
+            --red: #c41e3a;
+            --gold: #c9a96e;
+            --text: #5c1a1a;
+            --text-light: #8b5e5e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            font-family: "STKaiti", "KaiTi", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 30%, rgba(196,30,58,0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 85%, rgba(201,169,110,0.05) 0%, transparent 50%);
+        }
+
+        /* ── Petal Canvas ── */
+        #petalCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* ── Main Content ── */
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px 12px 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── Top Ornament ── */
+        .top-ornament {
+            width: 55%;
+            max-width: 240px;
+            margin: 4px auto 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            animation: fadeSlideIn 0.8s 0.2s ease forwards;
+        }
+        .top-ornament::before,
+        .top-ornament::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .top-ornament .diamond {
+            width: 6px; height: 6px;
+            background: var(--gold);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+        }
+
+        /* ── Invitation Image ── */
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow:
+                0 2px 24px rgba(92,26,26,0.1),
+                0 0 0 1px rgba(201,169,110,0.25);
+            opacity: 0;
+            animation: fadeSlideIn 0.8s 0.4s ease forwards;
+        }
+        .invitation-img {
+            display: block;
+            width: 100%;
+            height: auto;
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        /* ── Bottom Ornament ── */
+        .bottom-ornament {
+            width: 55%;
+            max-width: 240px;
+            margin: 16px auto 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            animation: fadeSlideIn 0.8s 0.6s ease forwards;
+        }
+        .bottom-ornament::before,
+        .bottom-ornament::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .bottom-ornament .flower { font-size: 0.9rem; flex-shrink: 0; }
+
+        .footer-text {
+            margin-top: 8px;
+            font-size: 0.7rem;
+            color: var(--text-light);
+            letter-spacing: 0.15em;
+            opacity: 0;
+            animation: fadeSlideIn 0.8s 0.8s ease forwards;
+        }
+
+        /* ── Music Button ── */
+        .music-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 20px;
+            z-index: 1001;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1.5px solid var(--gold);
+            background: rgba(250,243,230,0.92);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 16px rgba(92,26,26,0.1);
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            color: var(--text);
+        }
+        .music-btn:active { transform: scale(0.92); }
+        .music-btn.playing {
+            border-color: var(--red);
+            background: rgba(196,30,58,0.08);
+        }
+        .music-btn.playing .note-icon {
+            animation: musicPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes musicPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.25); opacity: 0.7; }
+        }
+
+        /* ── Music Tooltip ── */
+        .music-tooltip {
+            position: fixed;
+            bottom: 32px;
+            right: 72px;
+            z-index: 1001;
+            background: rgba(92,26,26,0.85);
+            color: #faf3e6;
+            font-size: 0.72rem;
+            padding: 6px 14px;
+            border-radius: 20px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateX(8px);
+            transition: all 0.4s ease;
+            white-space: nowrap;
+        }
+        .music-tooltip.show { opacity: 1; transform: translateX(0); }
+
+        /* ── WeChat Share Guide ── */
+        .wechat-guide {
+            position: fixed;
+            top: 0; right: 0;
+            z-index: 9999;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 16px 20px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.6s ease;
+        }
+        .wechat-guide.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .wechat-guide .arrow-down {
+            font-size: 2rem;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            animation: bounceDown 1.5s ease-in-out infinite;
+            margin-right: 30px;
+        }
+        .wechat-guide .guide-text {
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            font-size: 0.78rem;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        @keyframes bounceDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+
+        /* ── Shared Animations ── */
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 374px) {
+            .container { padding: 10px 8px 44px; }
+        }
+        @media (min-width: 768px) {
+            body { background: #e8d5c0; }
+            .container {
+                background: var(--bg);
+                min-height: 100vh;
+                box-shadow: 0 0 80px rgba(0,0,0,0.12);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Petal Canvas ── -->
+    <canvas id="petalCanvas"></canvas>
+
+    <!-- ── Main Content ── -->
+    <div class="container">
+        <div class="top-ornament"><span class="diamond"></span></div>
+
+        <div class="image-wrapper">
+            <img src="invitation.png" alt="婚礼邀请函" class="invitation-img" loading="eager">
+        </div>
+
+        <div class="bottom-ornament"><span class="flower">❦</span></div>
+        <p class="footer-text">期 待 您 的 到 来</p>
+    </div>
+
+    <!-- ── Music Button ── -->
+    <button id="musicBtn" class="music-btn" aria-label="音乐开关">
+        <span class="note-icon">🎵</span>
+    </button>
+    <div id="musicTooltip" class="music-tooltip">点击播放音乐</div>
+
+    <!-- ── WeChat Share Guide ── -->
+    <div id="wechatGuide" class="wechat-guide">
+        <span class="arrow-down">↗</span>
+        <span class="guide-text">点击右上角 ··· 分享给朋友</span>
+    </div>
+
+    <!-- ── Background Music ── -->
+    <audio id="bgm" preload="auto" loop>
+        <source src="bgm.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+    (function() {
+        // ============================================================
+        //  1. PETAL FALLING ANIMATION (Canvas 2D)
+        // ============================================================
+        const canvas = document.getElementById('petalCanvas');
+        const ctx = canvas.getContext('2d');
+        let animId, canvasW, canvasH;
+
+        const PETAL_COLORS = [
+            'rgba(244,167,185,0.82)', 'rgba(196,30,58,0.7)',
+            'rgba(254,245,231,0.78)', 'rgba(233,150,165,0.75)',
+            'rgba(220,80,100,0.65)', 'rgba(201,169,110,0.6)',
+        ];
+
+        let petals = [];
+        const PETAL_COUNT = 30;
+
+        function resizeCanvas() {
+            canvasW = window.innerWidth;
+            canvasH = window.innerHeight;
+            canvas.width = canvasW * (window.devicePixelRatio || 1);
+            canvas.height = canvasH * (window.devicePixelRatio || 1);
+            canvas.style.width = canvasW + 'px';
+            canvas.style.height = canvasH + 'px';
+            ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+        }
+
+        function drawPetal(x, y, size, rotation, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            const s = size;
+            ctx.moveTo(0, -s * 1.1);
+            ctx.bezierCurveTo(s * 0.55, -s * 0.65, s * 0.65, s * 0.2, 0, s * 0.95);
+            ctx.bezierCurveTo(-s * 0.65, s * 0.2, -s * 0.55, -s * 0.65, 0, -s * 1.1);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function spawnPetal(fromTop) {
+            return {
+                x: Math.random() * canvasW,
+                y: fromTop ? -(Math.random() * canvasH * 0.5) : Math.random() * canvasH,
+                size: 10 + Math.random() * 16,
+                speedY: 0.25 + Math.random() * 0.75,
+                speedX: -0.25 + Math.random() * 0.5,
+                amp: 12 + Math.random() * 45,
+                freq: 0.005 + Math.random() * 0.018,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.035,
+                color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+                phase: Math.random() * Math.PI * 2,
+            };
+        }
+
+        function initPetals() {
+            petals = Array.from({ length: PETAL_COUNT }, () => spawnPetal(false));
+        }
+
+        function updatePetals() {
+            for (let i = 0; i < petals.length; i++) {
+                const p = petals[i];
+                p.y += p.speedY;
+                p.x += Math.sin(p.y * p.freq + p.phase) * p.speedX;
+                p.rotation += p.rotSpeed;
+                if (p.y > canvasH + p.size * 2) petals[i] = spawnPetal(true);
+                if (p.x > canvasW + p.size * 2) p.x = -p.size * 2;
+                if (p.x < -p.size * 2) p.x = canvasW + p.size * 2;
+            }
+        }
+
+        function drawPetals() {
+            ctx.clearRect(0, 0, canvasW, canvasH);
+            for (const p of petals) drawPetal(p.x, p.y, p.size, p.rotation, p.color);
+        }
+
+        function animatePetals() {
+            updatePetals();
+            drawPetals();
+            animId = requestAnimationFrame(animatePetals);
+        }
+
+        // ============================================================
+        //  2. MUSIC PLAYER
+        // ============================================================
+        const bgm = document.getElementById('bgm');
+        const musicBtn = document.getElementById('musicBtn');
+        const musicTooltip = document.getElementById('musicTooltip');
+        const noteIcon = musicBtn.querySelector('.note-icon');
+        let musicPlaying = false;
+
+        // Set moderate volume
+        bgm.volume = 0.35;
+
+        function updateMusicUI() {
+            if (musicPlaying) {
+                musicBtn.classList.add('playing');
+                noteIcon.textContent = '🎶';
+            } else {
+                musicBtn.classList.remove('playing');
+                noteIcon.textContent = '🎵';
+            }
+        }
+
+        function playMusic() {
+            bgm.play().then(() => {
+                musicPlaying = true;
+                updateMusicUI();
+            }).catch(() => {
+                // Browser blocked autoplay - wait for next user gesture
+                musicPlaying = false;
+                updateMusicUI();
+            });
+        }
+
+        function pauseMusic() {
+            bgm.pause();
+            musicPlaying = false;
+            updateMusicUI();
+        }
+
+        function toggleMusic() {
+            if (musicPlaying) {
+                pauseMusic();
+            } else {
+                playMusic();
+            }
+        }
+
+        // Show tooltip only once on first visit
+        let tooltipShown = false;
+        function showTooltipOnce() {
+            if (tooltipShown) return;
+            tooltipShown = true;
+            musicTooltip.classList.add('show');
+            setTimeout(() => musicTooltip.classList.remove('show'), 4000);
+        }
+
+        musicBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            musicTooltip.classList.remove('show');
+            tooltipShown = true;
+            toggleMusic();
+        });
+
+        // First user interaction anywhere on the page → start music + petals
+        let firstInteraction = false;
+        document.addEventListener('click', function initAll() {
+            if (firstInteraction) return;
+            firstInteraction = true;
+            if (!musicPlaying) playMusic();
+            if (!animId) animatePetals();
+            // Show tooltip after music starts
+            setTimeout(showTooltipOnce, 1500);
+        }, { once: true });
+
+        // ============================================================
+        //  3. WECHAT SHARE GUIDE
+        // ============================================================
+        const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+        const wechatGuide = document.getElementById('wechatGuide');
+
+        if (isWeChat) {
+            setTimeout(() => {
+                wechatGuide.classList.add('show');
+                setTimeout(() => wechatGuide.classList.remove('show'), 8000);
+            }, 3000);
+        }
+
+        // ============================================================
+        //  4. INITIALIZATION
+        // ============================================================
+        function init() {
+            resizeCanvas();
+            initPetals();
+            drawPetals(); // Show static petals immediately
+
+            // Start animation immediately (will show petals even before interaction)
+            animatePetals();
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                petals.forEach(p => {
+                    p.x = Math.random() * canvasW;
+                    p.y = Math.random() * canvasH;
+                });
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (animId) { cancelAnimationFrame(animId); animId = null; }
+                } else {
+                    if (!animId) animatePetals();
+                }
+            });
+        }
+
+        init();
+    })();
+    </script>
+</body>
+</html>
